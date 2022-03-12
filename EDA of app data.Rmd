@@ -1,5 +1,5 @@
 ---
-title: "ds5110 homework2"
+title: "eda of ios mobile apps"
 author: "Ziyue Wang"
 date: "2021/10/8"
 output:
