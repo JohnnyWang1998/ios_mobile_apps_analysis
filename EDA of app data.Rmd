@@ -1,0 +1,145 @@
+---
+title: "ds5110 homework2"
+author: "Ziyue Wang"
+date: "2021/10/8"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Part A
+## Setup
+```{r}
+library(readr)
+library(tidyverse)
+```
+## Problem 1
+```{r data import and description}
+# Data source: https://www.kaggle.com/ramamet4/app-store-apple-data-set-10k-apps
+# Import data
+app_store <- read_csv("AppleStore.csv")
+
+# See if there are any NAs
+apply(is.na(app_store), 2, which)
+
+# Add a column to indicate whether the app is free or paid
+app_store <- mutate(app_store, pay=case_when(app_store["price"]==0~"free", app_store["price"]>0~"paid"))
+
+# Print the first several lines
+head(app_store)
+```
+### Describe the dataset and its variables
+This data set contains information about more than 7000 Apple iOS mobile applications, including user rate, price, genre etc. It was extracted from the iTunes Search API at the Apple Inc website in July 2017.
+
+
+The variables:
+
+"id" : App ID
+
+"track_name": App Name
+
+"size_bytes": Size (in Bytes)
+
+"currency": Currency Type
+
+"price": Price amount
+
+"rating_count_tot": User Rating counts (for all version)
+
+"rating_count_ver": User Rating counts (for current version)
+
+"user_rating" : Average User Rating value (for all version)
+
+"user_rating_ver": Average User Rating value (for current version)
+
+"ver" : Latest version code
+
+"cont_rating": Content Rating
+
+"prime_genre": Primary Genre
+
+"sup_devices.num": Number of supporting devices
+
+"ipadSc_urls.num": Number of screenshots showed for display
+
+"lang.num": Number of supported languages
+
+"vpp_lic": Vpp Device Based Licensing Enabled
+
+
+## Problem 2
+```{r}
+ggplot(filter(app_store, user_rating>0), aes(x=user_rating, color=pay, fill=pay)) +
+  geom_density(alpha=1/3) +
+  labs(title="User rating density over free and paid apps",
+       x="User rating", y="density") +
+  theme_minimal()
+
+```
+**Are paid apps rated better?**  
+Not really. It's a bit counterintuitive, but by looking at the density plot of free and paid apps we can tell that there are actually not too much differences between them. Precisely speaking, the rating of paid apps are slightly more densely distributed on 4 and 5 stars then free apps. Meanwhile, the rating of free apps have larger proportion on 2.5, 3 and 4.5 stars. The evidence is not powerful enough to verify that paid apps are rated better. Perhaps the best explanation is that people who buy the apps have higher expectations so the rating does not dramatically go higher just because they are paid apps.\
+
+```{r}
+
+ggplot(filter(app_store), aes(x=factor(1), fill=pay)) +
+geom_bar(position="fill", alpha=2/3) +
+coord_polar("y") +
+facet_wrap(~prime_genre) +
+labs(title="Free/paid apps ratio over different genres") +
+theme_minimal() +
+theme(axis.ticks = element_blank(),
+      axis.text = element_blank(),
+      panel.grid  = element_blank())
+
+```
+**What kind of genres have more paid apps?**  
+It's very clear that Education category has the largest ratio of paid apps. People are likely to pay for the apps for their personal study purposes, and the developers know that. Notice that Productivity, Medical, Reference, Navigation, Health & Fitness, Utility, Weather also have large percentage of paid apps. It's interesting that shopping has the least proportion of paid apps, which totally makes sense, because people buy inside the app, not pay the app at the beginning.\
+
+
+```{r}
+ggplot(filter(app_store, price>0), aes(x=price)) + 
+geom_bar(width=2) + 
+labs(title="Paid apps price distribution", x="price(dollars)", y="count") +
+theme_minimal()
+```
+**Price distribution?**  
+The price of most of the apps is under 25 dollars, but there is still a small part of the apps cost more than 50 dollars, even nearly 300 dollars.\
+
+
+```{r}
+filter(app_store, price==0) %>% 
+    arrange(desc(rating_count_tot)) %>%
+    slice(1:10) %>%
+ggplot(aes(x=reorder(track_name, -rating_count_tot), y=rating_count_tot, color = prime_genre, fill=prime_genre)) + 
+geom_bar(stat='identity', alpha=2/3) +
+labs(title="Top 10 popluar free apps", x="app names", y="total rating count") +
+theme_minimal() + 
+theme(axis.text.x = element_text(face="bold", size=10, angle=30))
+
+filter(app_store, price>0) %>% 
+    arrange(desc(rating_count_tot)) %>%
+    slice(1:10) %>%
+ggplot(aes(x=reorder(track_name, -rating_count_tot), y=rating_count_tot, color = prime_genre, fill=prime_genre)) + 
+geom_bar(stat='identity', alpha=2/3) +
+labs(title="Top 10 popluar paid apps", x="app names", y="total rating count") +
+theme_minimal() +
+theme(axis.text.x = element_text(face="bold", size=10, angle=30))
+```
+**Top 10 popular apps**  
+These are the most top 10 popular apps among free apps and paid apps ordered according to their total rating count. It's quite interesting that the most 10 popular paid apps are all games, which indicates people are more willing to pay out of entertainment purposes.\
+
+
+```{r}
+#filter rows with zero rates because you can't rate a app with 0 star
+ggplot(filter(app_store, user_rating>0), aes(x=user_rating, color=prime_genre, fill=prime_genre)) +
+geom_density(alpha=2/3)+
+facet_wrap(~prime_genre)+
+labs(title="Rating density of apps over different genres", x="user rating") +
+theme_minimal()
+```
+**What is the rating density over different genres?**  
+It's excited to see that most of the game apps have good feedback because the the rating is distributed more centralized around 4. But for Finance and Sports, the ratings are distributed much more evenly which means that there are lots of complaints about the apps on these two categories.\
+
